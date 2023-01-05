@@ -1,0 +1,53 @@
+#####################az cli##############################
+az login -u <username> -p <password>
+subscription="<subscriptionId>" # add subscription here
+
+az account set -s $subscription # ...or use 'az login'
+
+az mariadb server update --name mydemoserver --resource-group myresourcegroup --backup-retention 10
+
+az mariadb server restore --resource-group myresourcegroup --name mydemoserver-restored --restore-point-in-time 2018-03-13T13:59:00Z --source-server mydemoserver
+
+
+##################powershell##################################
+
+
+$subscription = ""
+Connect-AzAccount
+Select-AzSubscription -SubscriptionName $subscription
+
+#backup
+
+Update-AzMariaDbServer -Name mydemoserver -ResourceGroupName myresourcegroup -BackupRetentionDay 10
+
+# restore
+
+$restorePointInTime = (Get-Date).AddMinutes(-10)
+Get-AzMariaDbServer -Name mydemoserver -ResourceGroupName myresourcegroup |
+  Restore-AzMariaDbServer -Name mydemoserver-restored -ResourceGroupName myresourcegroup -RestorePointInTime $restorePointInTime -UsePointInTimeRestore
+  
+  ########################################
+  
+  #!/bin/sh
+#login into azure portal 
+az login -u <username> -p <password> 1>/dev/null
+# checking  connectivity
+which mysql 1>/dev/null 2>/dev/null
+if [ $? -ne 0 ]
+then
+  echo "mysql install"
+  mysql --host demomaria3101.mariadb.database.azure.com --user useradmin@demomaria3101 -pPassword@123 \q
+  echo "success"
+  
+else 
+  echo "mysql not installed"
+ fi
+#Full Backup
+mariabackup --backup --target-dir=/var/mariadb/backup/ --host=demomaria3101.mariadb.database.azure.com --user=useradmin@demomaria3101 --password=Password@123
+ls /var/mariadb/backup/
+mariabackup --prepare --target-dir=/var/mariadb/backup/
+#incremental Backup
+mariabackup --backup --target-dir=/var/mariadb/inc2/ --incremental-basedir=/var/mariadb/inc1/ --host=demomaria3101.mariadb.database.azure.com --user=useradmin@demomaria3101 --password=Password@123
+
+
+#mysql -u dbuser -p mydb < mydb_dump.sql
